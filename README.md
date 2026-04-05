@@ -1,7 +1,5 @@
 # F1 2026 Strategy Predictor
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Naksh-IIITB/hacknight)
-
 This project is a hackathon-ready baseline for an AI-assisted Formula 1 strategy model built around the 2026 regulations. It predicts qualifying pace, suggests ERS deploy/harvest behavior, estimates qualifying fuel loads, and simulates race stints with tyre and dirty-air effects.
 
 It is intentionally a **hybrid simulator**, not a fake black box. Public F1 data does not expose full telemetry, power-unit maps, tyre carcass temperatures, or complete aero balance data for every team, so the model combines:
@@ -67,26 +65,6 @@ python3 -m uvicorn api:app --reload
 ```
 
 Then open the dashboard at `http://127.0.0.1:8000/` or the API docs at `http://127.0.0.1:8000/docs`.
-
-## Deploy on Render
-
-This repo is prepared for Render with:
-
-- [render.yaml](/Users/naksh/Documents/New%20project/render.yaml)
-- [Dockerfile](/Users/naksh/Documents/New%20project/Dockerfile)
-- [runtime.txt](/Users/naksh/Documents/New%20project/runtime.txt)
-
-Fastest path:
-
-1. Push this project to GitHub.
-2. In Render, choose **New +** then **Blueprint**.
-3. Connect the GitHub repo.
-4. Render will detect `render.yaml` and create the web service.
-5. Open the deployed service URL once the build finishes.
-
-Important note:
-
-- The app depends on the checked-in generated artifacts in `data/` and `models/`, so keep those files in the repo when you deploy.
 
 ## Current trained model
 
