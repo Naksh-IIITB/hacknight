@@ -92,9 +92,9 @@ After the latest refresh, the saved historical lap regressor was trained on:
 
 Held-out validation metrics:
 
-- **MAE**: `0.8907s`
-- **RMSE**: `2.7937s`
-- **R²**: `0.8938`
+- **MAE**: `0.8078s`
+- **RMSE**: `2.7783s`
+- **R²**: `0.8949`
 
 ## Example requests
 

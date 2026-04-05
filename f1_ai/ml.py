@@ -100,8 +100,19 @@ class LapTimeRegressor:
         if self.pipeline is None:
             return
         model = getattr(self.pipeline, "named_steps", {}).get("model")
-        if model is not None and hasattr(model, "n_jobs"):
-            model.n_jobs = 1
+        self._force_single_thread(model)
+
+    def _force_single_thread(self, estimator: Any | None) -> None:
+        if estimator is None:
+            return
+        if hasattr(estimator, "n_jobs"):
+            estimator.n_jobs = 1
+        for nested in getattr(estimator, "estimators", []):
+            if isinstance(nested, tuple):
+                _, nested_estimator = nested
+            else:
+                nested_estimator = nested
+            self._force_single_thread(nested_estimator)
 
     def _base_row(self, team: TeamProfile, track: TrackProfile) -> dict[str, float]:
         row = {

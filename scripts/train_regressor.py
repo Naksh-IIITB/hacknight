@@ -6,7 +6,7 @@ from pathlib import Path
 import joblib
 import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor, VotingRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
@@ -58,11 +58,28 @@ def main() -> None:
             ),
             (
                 "model",
-                RandomForestRegressor(
-                    n_estimators=250,
-                    random_state=42,
-                    min_samples_leaf=2,
-                    n_jobs=-1,
+                VotingRegressor(
+                    estimators=[
+                        (
+                            "rf",
+                            RandomForestRegressor(
+                                n_estimators=120,
+                                random_state=42,
+                                min_samples_leaf=2,
+                                n_jobs=1,
+                            ),
+                        ),
+                        (
+                            "et",
+                            ExtraTreesRegressor(
+                                n_estimators=80,
+                                random_state=42,
+                                min_samples_leaf=1,
+                                n_jobs=1,
+                            ),
+                        ),
+                    ],
+                    weights=[0.35, 0.65],
                 ),
             ),
         ]
@@ -77,12 +94,13 @@ def main() -> None:
         "feature_columns": list(frame.columns),
         "categorical_features": categorical_features,
         "numeric_features": numeric_features,
+        "model_name": "weighted_voting_regressor_rf_et",
         "mae_sec": round(float(mean_absolute_error(y_test, predictions)), 4),
         "rmse_sec": round(float(mean_squared_error(y_test, predictions) ** 0.5), 4),
         "r2": round(float(r2_score(y_test, predictions)), 4),
     }
 
-    joblib.dump(pipeline, MODEL_PATH)
+    joblib.dump(pipeline, MODEL_PATH, compress=3)
     with META_PATH.open("w", encoding="utf-8") as handle:
         json.dump(metadata, handle, indent=2)
 

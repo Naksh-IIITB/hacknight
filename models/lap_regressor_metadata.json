@@ -80,7 +80,8 @@
     "team_reliability",
     "team_development_trend"
   ],
-  "mae_sec": 0.8907,
-  "rmse_sec": 2.7937,
-  "r2": 0.8938
+  "model_name": "weighted_voting_regressor_rf_et",
+  "mae_sec": 0.8078,
+  "rmse_sec": 2.7783,
+  "r2": 0.8949
 }
