@@ -9,7 +9,7 @@ import fastf1
 import pandas as pd
 import requests
 
-from f1_ai.data import DATA_DIR, load_teams, load_tracks
+from f1_ai.data import DATA_DIR, load_teams, load_track_maps, load_tracks
 
 
 CACHE_DIR = DATA_DIR / "fastf1_cache"
@@ -119,6 +119,7 @@ def main() -> None:
     fastf1.Cache.enable_cache(str(CACHE_DIR))
     tracks = load_tracks()
     teams = load_teams()
+    existing_maps = load_track_maps()
 
     lap_frames: list[pd.DataFrame] = []
     map_payload: list[dict[str, Any]] = []
@@ -126,7 +127,14 @@ def main() -> None:
     for key, track in tracks.items():
         if key in TRAINING_TRACK_KEYS:
             lap_frames.extend(_collect_track_sessions(key, track, teams))
-        map_payload.append(_build_track_map(key, track))
+        try:
+            map_payload.append(_build_track_map(key, track))
+        except Exception as exc:
+            print(f"reuse existing map for {key}: {exc}")
+            if key in existing_maps:
+                map_payload.append(existing_maps[key])
+            else:
+                map_payload.append(_offline_fallback_map(key, track))
 
     if lap_frames:
         combined = pd.concat(lap_frames, ignore_index=True)
@@ -136,6 +144,37 @@ def main() -> None:
     with TRACK_MAPS_PATH.open("w", encoding="utf-8") as handle:
         json.dump(map_payload, handle, indent=2)
     print(f"wrote track maps: {TRACK_MAPS_PATH} tracks={len(map_payload)}")
+
+
+def _offline_fallback_map(track_key: str, track: Any) -> dict[str, Any]:
+    points = [
+        {"x": 0.18, "y": 0.25},
+        {"x": 0.72, "y": 0.22},
+        {"x": 0.84, "y": 0.52},
+        {"x": 0.65, "y": 0.8},
+        {"x": 0.28, "y": 0.78},
+        {"x": 0.12, "y": 0.5},
+        {"x": 0.18, "y": 0.25},
+    ]
+    corners = []
+    for index in range(track.corners):
+        point = points[index % (len(points) - 1)]
+        corners.append(
+            {
+                "x": point["x"],
+                "y": point["y"],
+                "number": index + 1,
+                "letter": "",
+                "angle": 0.0,
+            }
+        )
+    return {
+        "key": track_key,
+        "source": "offline-fallback",
+        "polyline": points,
+        "corners": corners,
+        "metadata": {"circuit": track.circuit, "grand_prix": track.grand_prix, "estimated_corners": True},
+    }
 
 
 def _collect_track_sessions(track_key: str, track: Any, teams: dict[str, Any]) -> list[pd.DataFrame]:
@@ -199,6 +238,9 @@ def _collect_track_sessions(track_key: str, track: Any, teams: dict[str, Any]) -
                 laps[
                     [
                         "lap_time_sec",
+                        "track_key",
+                        "team_key",
+                        "year",
                         "session_code",
                         "compound_key",
                         "tyre_life",

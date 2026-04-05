@@ -14,8 +14,11 @@ from .data import MODEL_DIR, TeamProfile, TrackProfile
 class LapTimeRegressor:
     def __init__(self) -> None:
         self.model_path = MODEL_DIR / "lap_time_regressor.joblib"
+        self.race_model_path = MODEL_DIR / "lap_time_race_regressor.joblib"
         self.pipeline: Any | None = None
+        self.race_pipeline: Any | None = None
         self.metadata: dict[str, Any] = {}
+        self.race_metadata: dict[str, Any] = {}
         self.available = False
         if self.model_path.exists():
             self.pipeline = joblib.load(self.model_path)
@@ -25,6 +28,13 @@ class LapTimeRegressor:
                 with meta_path.open("r", encoding="utf-8") as handle:
                     self.metadata = json.load(handle)
             self.available = True
+        if self.race_model_path.exists():
+            self.race_pipeline = joblib.load(self.race_model_path)
+            self._configure_inference_runtime(self.race_pipeline)
+            race_meta_path = MODEL_DIR / "lap_race_regressor_metadata.json"
+            if race_meta_path.exists():
+                with race_meta_path.open("r", encoding="utf-8") as handle:
+                    self.race_metadata = json.load(handle)
 
     def predict_qualifying_lap(
         self,
@@ -55,7 +65,7 @@ class LapTimeRegressor:
                 "traffic_penalty_sec": 0.0,
             }
         )
-        return float(self.pipeline.predict(self._frame(row))[0])
+        return float(self.pipeline.predict(self._frame(row, self.metadata))[0])
 
     def predict_race_lap(
         self,
@@ -72,7 +82,7 @@ class LapTimeRegressor:
         fuel_load_kg: float,
         traffic_penalty_sec: float,
     ) -> float | None:
-        if not self.available:
+        if not self.available and self.race_pipeline is None:
             return None
         row = self._base_row(team, track)
         row.update(
@@ -91,15 +101,27 @@ class LapTimeRegressor:
                 "traffic_penalty_sec": float(traffic_penalty_sec),
             }
         )
-        return float(self.pipeline.predict(self._frame(row))[0])
+        pipeline = self.race_pipeline or self.pipeline
+        metadata = self.race_metadata or self.metadata
+        return float(pipeline.predict(self._frame(row, metadata))[0])
 
     def status(self) -> dict[str, Any]:
-        return {"available": self.available, **self.metadata}
+        return {
+            "available": self.available,
+            **self.metadata,
+            "race_model_available": self.race_pipeline is not None,
+            "race_model_metrics": {
+                "mae_sec": self.race_metadata.get("mae_sec"),
+                "rmse_sec": self.race_metadata.get("rmse_sec"),
+                "r2": self.race_metadata.get("r2"),
+            },
+        }
 
-    def _configure_inference_runtime(self) -> None:
-        if self.pipeline is None:
+    def _configure_inference_runtime(self, pipeline: Any | None = None) -> None:
+        target_pipeline = pipeline or self.pipeline
+        if target_pipeline is None:
             return
-        model = getattr(self.pipeline, "named_steps", {}).get("model")
+        model = getattr(target_pipeline, "named_steps", {}).get("model")
         self._force_single_thread(model)
 
     def _force_single_thread(self, estimator: Any | None) -> None:
@@ -116,6 +138,9 @@ class LapTimeRegressor:
 
     def _base_row(self, team: TeamProfile, track: TrackProfile) -> dict[str, float]:
         row = {
+            "track_key": track.key,
+            "team_key": team.key,
+            "year": 2026.0,
             "track_length_km": track.length_km,
             "track_corners": float(track.corners),
             "track_drs_zones": float(track.drs_zones),
@@ -144,8 +169,8 @@ class LapTimeRegressor:
         }
         return row
 
-    def _frame(self, row: dict[str, Any]) -> pd.DataFrame:
-        columns = self.metadata.get("feature_columns")
+    def _frame(self, row: dict[str, Any], metadata: dict[str, Any]) -> pd.DataFrame:
+        columns = metadata.get("feature_columns")
         if columns:
             ordered = {column: row.get(column) for column in columns}
             return pd.DataFrame([ordered], columns=columns)

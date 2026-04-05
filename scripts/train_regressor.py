@@ -19,6 +19,8 @@ from f1_ai.data import DATA_DIR, MODEL_DIR
 CSV_PATH = DATA_DIR / "historical_laps_2025_2026.csv"
 MODEL_PATH = MODEL_DIR / "lap_time_regressor.joblib"
 META_PATH = MODEL_DIR / "lap_regressor_metadata.json"
+RACE_MODEL_PATH = MODEL_DIR / "lap_time_race_regressor.joblib"
+RACE_META_PATH = MODEL_DIR / "lap_race_regressor_metadata.json"
 
 
 def main() -> None:
@@ -27,9 +29,28 @@ def main() -> None:
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     frame = pd.read_csv(CSV_PATH)
+    global_pipeline, global_metadata = _train_model(frame.copy())
+    joblib.dump(global_pipeline, MODEL_PATH, compress=3)
+    with META_PATH.open("w", encoding="utf-8") as handle:
+        json.dump(global_metadata, handle, indent=2)
+
+    race_frame = frame[frame["session_code"] == "R"].copy()
+    race_pipeline, race_metadata = _train_model(race_frame, model_name="race_weighted_voting_regressor_rf_et")
+    joblib.dump(race_pipeline, RACE_MODEL_PATH, compress=3)
+    with RACE_META_PATH.open("w", encoding="utf-8") as handle:
+        json.dump(race_metadata, handle, indent=2)
+
+    print(json.dumps({"global": global_metadata, "race": race_metadata}, indent=2))
+
+
+def _train_model(frame: pd.DataFrame, model_name: str = "weighted_voting_regressor_rf_et") -> tuple[Pipeline, dict]:
     target = frame.pop("lap_time_sec")
 
-    categorical_features = ["session_code", "compound_key"]
+    categorical_features = [
+        column
+        for column in ["track_key", "team_key", "session_code", "compound_key"]
+        if column in frame.columns
+    ]
     numeric_features = [column for column in frame.columns if column not in categorical_features]
 
     pipeline = Pipeline(
@@ -94,17 +115,12 @@ def main() -> None:
         "feature_columns": list(frame.columns),
         "categorical_features": categorical_features,
         "numeric_features": numeric_features,
-        "model_name": "weighted_voting_regressor_rf_et",
+        "model_name": model_name,
         "mae_sec": round(float(mean_absolute_error(y_test, predictions)), 4),
         "rmse_sec": round(float(mean_squared_error(y_test, predictions) ** 0.5), 4),
         "r2": round(float(r2_score(y_test, predictions)), 4),
     }
-
-    joblib.dump(pipeline, MODEL_PATH, compress=3)
-    with META_PATH.open("w", encoding="utf-8") as handle:
-        json.dump(metadata, handle, indent=2)
-
-    print(json.dumps(metadata, indent=2))
+    return pipeline, metadata
 
 
 if __name__ == "__main__":

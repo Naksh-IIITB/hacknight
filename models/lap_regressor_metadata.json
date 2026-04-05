@@ -1,6 +1,9 @@
 {
   "rows": 13129,
   "feature_columns": [
+    "track_key",
+    "team_key",
+    "year",
     "session_code",
     "compound_key",
     "tyre_life",
@@ -40,10 +43,13 @@
     "team_development_trend"
   ],
   "categorical_features": [
+    "track_key",
+    "team_key",
     "session_code",
     "compound_key"
   ],
   "numeric_features": [
+    "year",
     "tyre_life",
     "lap_number_norm",
     "stint",
@@ -81,7 +87,7 @@
     "team_development_trend"
   ],
   "model_name": "weighted_voting_regressor_rf_et",
-  "mae_sec": 0.8078,
-  "rmse_sec": 2.7783,
-  "r2": 0.8949
+  "mae_sec": 0.7431,
+  "rmse_sec": 2.716,
+  "r2": 0.8996
 }
