@@ -1,5 +1,7 @@
 # F1 2026 Strategy Predictor
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Naksh-IIITB/hacknight)
+
 This project is a hackathon-ready baseline for an AI-assisted Formula 1 strategy model built around the 2026 regulations. It predicts qualifying pace, suggests ERS deploy/harvest behavior, estimates qualifying fuel loads, and simulates race stints with tyre and dirty-air effects.
 
 It is intentionally a **hybrid simulator**, not a fake black box. Public F1 data does not expose full telemetry, power-unit maps, tyre carcass temperatures, or complete aero balance data for every team, so the model combines:
