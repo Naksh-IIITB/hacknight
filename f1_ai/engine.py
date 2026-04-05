@@ -187,6 +187,7 @@ class F1Predictor:
         starting_position: int = 6,
         traffic_level: float = 0.5,
         wind_kph: float = 8.0,
+        include_expected_result: bool = True,
     ) -> dict[str, Any]:
         team = self._team(team_key)
         track = self._track(track_key)
@@ -208,6 +209,14 @@ class F1Predictor:
 
         best["team_notes"] = team.notes
         best["driver"] = self._driver_label(driver)
+        if include_expected_result:
+            best["expected_race_result"] = self._estimate_finish_position(
+                team_key=team_key,
+                track_key=track_key,
+                driver_number=driver.number if driver else None,
+                ambient_temp_c=temp,
+                wind_kph=wind_kph,
+            )
         best["track_model"] = {
             "dirty_air_penalty_sec_per_lap": round(track.dirty_air_penalty_sec, 3),
             "overtaking_risk": round(track.overtaking_risk, 2),
@@ -230,6 +239,54 @@ class F1Predictor:
                 }
             )
         return sorted(board, key=lambda item: item["predicted_total_time"])
+
+    def expected_race_order(
+        self,
+        track_key: str,
+        *,
+        ambient_temp_c: float | None = None,
+        wind_kph: float = 8.0,
+    ) -> list[dict[str, Any]]:
+        entries = []
+        seen_teams: set[str] = set()
+        for driver in self.drivers:
+            race = self.simulate_race(
+                driver.team_key,
+                track_key,
+                driver_number=driver.number,
+                ambient_temp_c=ambient_temp_c,
+                wind_kph=wind_kph,
+                include_expected_result=False,
+            )
+            entries.append(
+                {
+                    "position": 0,
+                    "driver": driver.name,
+                    "number": driver.number,
+                    "team": driver.team_name,
+                    "predicted_total_time": race["predicted_total_time"],
+                    "total_race_time_sec": race["total_race_time_sec"],
+                }
+            )
+            seen_teams.add(driver.team_key)
+        for team_key in self.list_teams():
+            if team_key in seen_teams:
+                continue
+            race = self.simulate_race(team_key, track_key, ambient_temp_c=ambient_temp_c, wind_kph=wind_kph)
+            entries.append(
+                {
+                    "position": 0,
+                    "driver": "Team baseline",
+                    "number": None,
+                    "team": race["team"],
+                    "predicted_total_time": race["predicted_total_time"],
+                    "total_race_time_sec": race["total_race_time_sec"],
+                }
+            )
+        entries.sort(key=lambda item: item["total_race_time_sec"])
+        for index, item in enumerate(entries, start=1):
+            item["position"] = index
+        return entries
 
     def snapshot(self) -> dict[str, Any]:
         return {
@@ -399,6 +456,30 @@ class F1Predictor:
         minutes = int(seconds // 60)
         remainder = seconds - 60 * minutes
         return f"{minutes}:{remainder:06.3f}"
+
+    def _estimate_finish_position(
+        self,
+        *,
+        team_key: str,
+        track_key: str,
+        driver_number: int | None,
+        ambient_temp_c: float,
+        wind_kph: float,
+    ) -> str:
+        order = self.expected_race_order(track_key, ambient_temp_c=ambient_temp_c, wind_kph=wind_kph)
+        for item in order:
+            if driver_number is not None and item["number"] == driver_number:
+                return self._ordinal(item["position"])
+            if driver_number is None and item["driver"] == "Team baseline" and item["team"] == self._team(team_key).name:
+                return self._ordinal(item["position"])
+        return "N/A"
+
+    def _ordinal(self, value: int) -> str:
+        if 10 <= value % 100 <= 20:
+            suffix = "th"
+        else:
+            suffix = {1: "st", 2: "nd", 3: "rd"}.get(value % 10, "th")
+        return f"{value}{suffix}"
 
     def _driver(self, driver_number: int | None, team_key: str) -> DriverProfile | None:
         if driver_number is None:

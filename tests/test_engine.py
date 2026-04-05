@@ -18,11 +18,17 @@ class PredictorTests(unittest.TestCase):
         result = self.predictor.simulate_race("ferrari", "japan", driver_number=16)
         total_laps = sum(stint["laps"] for stint in result["stints"])
         self.assertEqual(total_laps, 53)
+        self.assertIn("expected_race_result", result)
 
     def test_driver_specific_teammates_produce_different_outputs(self) -> None:
         verstappen = self.predictor.predict_qualifying("red_bull", "japan", driver_number=3)
         hadjar = self.predictor.predict_qualifying("red_bull", "japan", driver_number=6)
         self.assertNotEqual(verstappen["predicted_lap_time_sec"], hadjar["predicted_lap_time_sec"])
+
+    def test_expected_race_order_contains_positions(self) -> None:
+        order = self.predictor.expected_race_order("japan")
+        self.assertGreaterEqual(len(order), 22)
+        self.assertEqual(order[0]["position"], 1)
 
     def test_strategy_board_contains_all_teams(self) -> None:
         board = self.predictor.build_team_strategy_board("china")

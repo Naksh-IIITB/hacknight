@@ -233,6 +233,7 @@
             <span class="muted">Race strategy</span>
             <strong id="raceStrat">-</strong>
             <div id="raceTime" class="muted"></div>
+            <div id="raceResult" class="muted"></div>
           </div>
           <div class="metric">
             <span class="muted">ERS bias</span>
@@ -255,6 +256,10 @@
           <div>
             <h3>Driver Comparison</h3>
             <table class="table" id="compareTable"></table>
+          </div>
+          <div>
+            <h3>Predicted Race Classification</h3>
+            <table class="table" id="classificationTable"></table>
           </div>
         </div>
       </div>
@@ -350,6 +355,14 @@
       `;
     }
 
+    function renderClassification(order) {
+      const table = document.getElementById('classificationTable');
+      table.innerHTML = `
+        <tr><th>Pos</th><th>Driver</th><th>Team</th><th>Total</th></tr>
+        ${order.slice(0, 12).map(row => `<tr><td>${row.position}</td><td>${row.driver}${row.number ? ` (#${row.number})` : ''}</td><td>${row.team}</td><td>${row.predicted_total_time}</td></tr>`).join('')}
+      `;
+    }
+
     async function runScenario() {
       const team = document.getElementById('team').value;
       const driver_number = document.getElementById('driver').value;
@@ -358,7 +371,7 @@
       const wind_kph = Number(document.getElementById('wind').value);
       const starting_position = Number(document.getElementById('position').value);
 
-      const [qual, race, board, mapData] = await Promise.all([
+      const [qual, race, board, mapData, classification] = await Promise.all([
         fetchJson('/predict/qualifying', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
@@ -370,18 +383,21 @@
           body: JSON.stringify({team, driver_number: driver_number ? Number(driver_number) : null, track, ambient_temp_c, starting_position, traffic_level: 0.55, wind_kph})
         }),
         fetchJson(`/strategy/${track}`),
-        fetchJson(`/tracks/${track}/map`)
+        fetchJson(`/tracks/${track}/map`),
+        fetchJson(`/results/${track}?ambient_temp_c=${ambient_temp_c}&wind_kph=${wind_kph}`)
       ]);
 
       document.getElementById('qualTime').textContent = qual.predicted_lap_time;
       document.getElementById('qualMeta').textContent = `${qual.driver} · Fuel ${qual.suggested_fuel_load_kg} kg · ML blend ${qual.model_blend}`;
       document.getElementById('raceStrat').textContent = race.recommended_strategy;
       document.getElementById('raceTime').textContent = `${race.driver} · Predicted total ${race.predicted_total_time}`;
+      document.getElementById('raceResult').textContent = `Expected race result: ${race.expected_race_result}`;
       document.getElementById('ersBias').textContent = `${qual.ers_plan.deployment_bias} / ${qual.ers_plan.harvest_bias}`;
       document.getElementById('ersWindow').textContent = qual.ers_plan.state_of_charge_window;
 
       renderStints(race.stints);
       renderBoard(board.board);
+      renderClassification(classification.order);
       drawTrackMap(mapData);
     }
 

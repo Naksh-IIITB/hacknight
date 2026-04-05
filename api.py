@@ -132,3 +132,11 @@ def simulate_race(request: RaceRequest) -> dict:
 @app.get("/strategy/{track}")
 def strategy_board(track: str) -> dict:
     return {"track": track, "board": predictor.build_team_strategy_board(track)}
+
+
+@app.get("/results/{track}")
+def expected_results(track: str, ambient_temp_c: float | None = None, wind_kph: float = 8.0) -> dict:
+    return {
+        "track": track,
+        "order": predictor.expected_race_order(track, ambient_temp_c=ambient_temp_c, wind_kph=wind_kph),
+    }
