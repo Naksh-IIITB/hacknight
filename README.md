@@ -95,6 +95,9 @@ Held-out validation metrics:
 - **Global model MAE**: `0.7431s`
 - **Global model RMSE**: `2.7160s`
 - **Global model R²**: `0.8996`
+- **Qualifying best-lap model MAE**: `0.4216s`
+- **Qualifying best-lap model RMSE**: `0.5286s`
+- **Qualifying best-lap model R²**: `0.9958`
 - **Race-only model MAE**: `0.3673s`
 - **Race-only model RMSE**: `0.8257s`
 - **Race-only model R²**: `0.9892`

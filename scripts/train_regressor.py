@@ -19,6 +19,8 @@ from f1_ai.data import DATA_DIR, MODEL_DIR
 CSV_PATH = DATA_DIR / "historical_laps_2025_2026.csv"
 MODEL_PATH = MODEL_DIR / "lap_time_regressor.joblib"
 META_PATH = MODEL_DIR / "lap_regressor_metadata.json"
+QUAL_MODEL_PATH = MODEL_DIR / "lap_time_qualifying_regressor.joblib"
+QUAL_META_PATH = MODEL_DIR / "lap_qualifying_regressor_metadata.json"
 RACE_MODEL_PATH = MODEL_DIR / "lap_time_race_regressor.joblib"
 RACE_META_PATH = MODEL_DIR / "lap_race_regressor_metadata.json"
 
@@ -34,13 +36,28 @@ def main() -> None:
     with META_PATH.open("w", encoding="utf-8") as handle:
         json.dump(global_metadata, handle, indent=2)
 
+    qualifying_frame = _build_qualifying_best_lap_frame(frame)
+    qualifying_pipeline, qualifying_metadata = _train_model(
+        qualifying_frame,
+        model_name="qualifying_best_lap_voting_regressor_rf_et",
+    )
+    joblib.dump(qualifying_pipeline, QUAL_MODEL_PATH, compress=3)
+    with QUAL_META_PATH.open("w", encoding="utf-8") as handle:
+        json.dump(qualifying_metadata, handle, indent=2)
+
     race_frame = frame[frame["session_code"] == "R"].copy()
     race_pipeline, race_metadata = _train_model(race_frame, model_name="race_weighted_voting_regressor_rf_et")
     joblib.dump(race_pipeline, RACE_MODEL_PATH, compress=3)
     with RACE_META_PATH.open("w", encoding="utf-8") as handle:
         json.dump(race_metadata, handle, indent=2)
 
-    print(json.dumps({"global": global_metadata, "race": race_metadata}, indent=2))
+    print(json.dumps({"global": global_metadata, "qualifying": qualifying_metadata, "race": race_metadata}, indent=2))
+
+
+def _build_qualifying_best_lap_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    qualifying = frame[frame["session_code"] == "Q"].copy()
+    qualifying = qualifying.sort_values("lap_time_sec").groupby(["track_key", "team_key", "year"], as_index=False).first()
+    return qualifying
 
 
 def _train_model(frame: pd.DataFrame, model_name: str = "weighted_voting_regressor_rf_et") -> tuple[Pipeline, dict]:

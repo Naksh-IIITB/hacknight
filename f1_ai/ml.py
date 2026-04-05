@@ -14,10 +14,13 @@ from .data import MODEL_DIR, TeamProfile, TrackProfile
 class LapTimeRegressor:
     def __init__(self) -> None:
         self.model_path = MODEL_DIR / "lap_time_regressor.joblib"
+        self.qualifying_model_path = MODEL_DIR / "lap_time_qualifying_regressor.joblib"
         self.race_model_path = MODEL_DIR / "lap_time_race_regressor.joblib"
         self.pipeline: Any | None = None
+        self.qualifying_pipeline: Any | None = None
         self.race_pipeline: Any | None = None
         self.metadata: dict[str, Any] = {}
+        self.qualifying_metadata: dict[str, Any] = {}
         self.race_metadata: dict[str, Any] = {}
         self.available = False
         if self.model_path.exists():
@@ -28,6 +31,13 @@ class LapTimeRegressor:
                 with meta_path.open("r", encoding="utf-8") as handle:
                     self.metadata = json.load(handle)
             self.available = True
+        if self.qualifying_model_path.exists():
+            self.qualifying_pipeline = joblib.load(self.qualifying_model_path)
+            self._configure_inference_runtime(self.qualifying_pipeline)
+            qualifying_meta_path = MODEL_DIR / "lap_qualifying_regressor_metadata.json"
+            if qualifying_meta_path.exists():
+                with qualifying_meta_path.open("r", encoding="utf-8") as handle:
+                    self.qualifying_metadata = json.load(handle)
         if self.race_model_path.exists():
             self.race_pipeline = joblib.load(self.race_model_path)
             self._configure_inference_runtime(self.race_pipeline)
@@ -46,7 +56,7 @@ class LapTimeRegressor:
         push_laps: int,
         fuel_load_kg: float,
     ) -> float | None:
-        if not self.available:
+        if not self.available and self.qualifying_pipeline is None:
             return None
         row = self._base_row(team, track)
         row.update(
@@ -65,7 +75,9 @@ class LapTimeRegressor:
                 "traffic_penalty_sec": 0.0,
             }
         )
-        return float(self.pipeline.predict(self._frame(row, self.metadata))[0])
+        pipeline = self.qualifying_pipeline or self.pipeline
+        metadata = self.qualifying_metadata or self.metadata
+        return float(pipeline.predict(self._frame(row, metadata))[0])
 
     def predict_race_lap(
         self,
@@ -110,6 +122,12 @@ class LapTimeRegressor:
             "available": self.available,
             **self.metadata,
             "race_model_available": self.race_pipeline is not None,
+            "qualifying_model_available": self.qualifying_pipeline is not None,
+            "qualifying_model_metrics": {
+                "mae_sec": self.qualifying_metadata.get("mae_sec"),
+                "rmse_sec": self.qualifying_metadata.get("rmse_sec"),
+                "r2": self.qualifying_metadata.get("r2"),
+            },
             "race_model_metrics": {
                 "mae_sec": self.race_metadata.get("mae_sec"),
                 "rmse_sec": self.race_metadata.get("rmse_sec"),

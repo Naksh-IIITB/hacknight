@@ -149,8 +149,12 @@ class F1Predictor:
             fuel_load_kg=fuel_load,
         )
         if ml_time is not None:
-            predicted_time = heuristic_time * 0.58 + ml_time * 0.42
-            model_blend = "heuristic 58% / historical ML 42%"
+            if self.regressor.qualifying_pipeline is not None:
+                predicted_time = heuristic_time * 0.28 + ml_time * 0.72
+                model_blend = "heuristic 28% / qualifying ML 72%"
+            else:
+                predicted_time = heuristic_time * 0.58 + ml_time * 0.42
+                model_blend = "heuristic 58% / historical ML 42%"
         else:
             predicted_time = heuristic_time
             model_blend = "heuristic only"
