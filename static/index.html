@@ -259,6 +259,8 @@
           </div>
           <div>
             <h3>Predicted Race Classification</h3>
+            <button id="classificationBtn" type="button">Load classification</button>
+            <div id="classificationStatus" class="model-status">Classification loads separately to keep Render responses fast.</div>
             <table class="table" id="classificationTable"></table>
           </div>
         </div>
@@ -268,6 +270,7 @@
 
   <script>
     let metaCache = null;
+    let lastScenario = null;
 
     async function fetchJson(url, options) {
       const response = await fetch(url, options);
@@ -370,8 +373,11 @@
       const ambient_temp_c = Number(document.getElementById('temp').value);
       const wind_kph = Number(document.getElementById('wind').value);
       const starting_position = Number(document.getElementById('position').value);
+      lastScenario = {track, ambient_temp_c, wind_kph};
+      document.getElementById('classificationStatus').textContent = 'Classification is ready to load for this scenario.';
+      document.getElementById('classificationTable').innerHTML = '';
 
-      const [qual, race, board, mapData, classification] = await Promise.all([
+      const [qual, race, board, mapData] = await Promise.all([
         fetchJson('/predict/qualifying', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
@@ -383,8 +389,7 @@
           body: JSON.stringify({team, driver_number: driver_number ? Number(driver_number) : null, track, ambient_temp_c, starting_position, traffic_level: 0.55, wind_kph})
         }),
         fetchJson(`/strategy/${track}`),
-        fetchJson(`/tracks/${track}/map`),
-        fetchJson(`/results/${track}?ambient_temp_c=${ambient_temp_c}&wind_kph=${wind_kph}`)
+        fetchJson(`/tracks/${track}/map`)
       ]);
 
       document.getElementById('qualTime').textContent = qual.predicted_lap_time;
@@ -397,8 +402,20 @@
 
       renderStints(race.stints);
       renderBoard(board.board);
-      renderClassification(classification.order);
       drawTrackMap(mapData);
+    }
+
+    async function loadClassification() {
+      if (!lastScenario) {
+        document.getElementById('classificationStatus').textContent = 'Run a scenario first, then load the classification.';
+        return;
+      }
+
+      document.getElementById('classificationStatus').textContent = 'Loading classification...';
+      const {track, ambient_temp_c, wind_kph} = lastScenario;
+      const classification = await fetchJson(`/results/${track}?ambient_temp_c=${ambient_temp_c}&wind_kph=${wind_kph}`);
+      renderClassification(classification.order);
+      document.getElementById('classificationStatus').textContent = `Showing predicted order for ${titleize(track)}.`;
     }
 
     async function runComparison() {
@@ -452,6 +469,7 @@
       document.getElementById('compareTeamA').addEventListener('change', event => fillDriverSelectFor('compareDriverA', event.target.value));
       document.getElementById('compareTeamB').addEventListener('change', event => fillDriverSelectFor('compareDriverB', event.target.value));
       document.getElementById('runBtn').addEventListener('click', runScenario);
+      document.getElementById('classificationBtn').addEventListener('click', loadClassification);
       document.getElementById('compareBtn').addEventListener('click', runComparison);
       await runScenario();
       await runComparison();
