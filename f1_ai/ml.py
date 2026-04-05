@@ -19,6 +19,7 @@ class LapTimeRegressor:
         self.available = False
         if self.model_path.exists():
             self.pipeline = joblib.load(self.model_path)
+            self._configure_inference_runtime()
             meta_path = MODEL_DIR / "lap_regressor_metadata.json"
             if meta_path.exists():
                 with meta_path.open("r", encoding="utf-8") as handle:
@@ -94,6 +95,13 @@ class LapTimeRegressor:
 
     def status(self) -> dict[str, Any]:
         return {"available": self.available, **self.metadata}
+
+    def _configure_inference_runtime(self) -> None:
+        if self.pipeline is None:
+            return
+        model = getattr(self.pipeline, "named_steps", {}).get("model")
+        if model is not None and hasattr(model, "n_jobs"):
+            model.n_jobs = 1
 
     def _base_row(self, team: TeamProfile, track: TrackProfile) -> dict[str, float]:
         row = {
