@@ -6,53 +6,157 @@
   <title>F1 2026 Strategy Predictor</title>
   <style>
     :root {
-      --bg: #f2efe7;
-      --panel: #fffdf8;
-      --ink: #182126;
-      --muted: #5a6670;
-      --accent: #d1495b;
-      --accent-2: #2f6690;
-      --line: #d8d2c5;
+      --bg: #08111f;
+      --bg-2: #122239;
+      --panel: rgba(10, 20, 34, 0.82);
+      --panel-strong: rgba(8, 16, 29, 0.94);
+      --ink: #edf4ff;
+      --muted: #9eb1c9;
+      --accent: #ff6b57;
+      --accent-2: #63c7ff;
+      --accent-3: #ffe082;
+      --line: rgba(152, 178, 211, 0.18);
+      --glow: 0 24px 80px rgba(4, 10, 18, 0.44);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: Georgia, "Times New Roman", serif;
+      font-family: "Avenir Next", "Trebuchet MS", "Gill Sans", sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(circle at top left, rgba(209, 73, 91, 0.14), transparent 30%),
-        radial-gradient(circle at top right, rgba(47, 102, 144, 0.16), transparent 26%),
-        linear-gradient(180deg, #f6f2e8, #ece6d8);
+        radial-gradient(circle at top left, rgba(255, 107, 87, 0.24), transparent 26%),
+        radial-gradient(circle at 85% 15%, rgba(99, 199, 255, 0.24), transparent 22%),
+        radial-gradient(circle at 50% 100%, rgba(255, 224, 130, 0.12), transparent 22%),
+        linear-gradient(180deg, #09111e 0%, #0c1728 45%, #0a1423 100%);
+      min-height: 100vh;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.45), transparent 80%);
+      pointer-events: none;
     }
     .wrap {
-      max-width: 1280px;
+      max-width: 1380px;
       margin: 0 auto;
-      padding: 32px 20px 48px;
+      padding: 28px 20px 56px;
     }
     .hero {
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
+      grid-template-columns: 1.35fr 0.65fr;
       gap: 20px;
       align-items: stretch;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .hero-card, .panel {
       background: var(--panel);
+      backdrop-filter: blur(18px);
       border: 1px solid var(--line);
-      border-radius: 24px;
-      padding: 22px;
-      box-shadow: 0 14px 40px rgba(24, 33, 38, 0.08);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: var(--glow);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-card::after, .panel::after {
+      content: "";
+      position: absolute;
+      inset: auto -30% -55% 35%;
+      height: 180px;
+      background: radial-gradient(circle, rgba(99, 199, 255, 0.18), transparent 60%);
+      pointer-events: none;
     }
     h1, h2, h3, p { margin-top: 0; }
-    h1 { font-size: clamp(2rem, 4vw, 4rem); line-height: 0.96; margin-bottom: 12px; }
-    .lede { color: var(--muted); font-size: 1.05rem; max-width: 58ch; }
+    h1, h2, h3 {
+      font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      letter-spacing: -0.03em;
+    }
+    h1 { font-size: clamp(2.5rem, 4vw, 5rem); line-height: 0.92; margin-bottom: 14px; max-width: 10ch; }
+    h2 { font-size: 1.85rem; margin-bottom: 8px; }
+    h3 { font-size: 1.2rem; margin-bottom: 10px; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--accent-3);
+      font-size: 0.78rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .eyebrow::before {
+      content: "";
+      width: 28px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+    }
+    .lede { color: var(--muted); font-size: 1.05rem; max-width: 60ch; line-height: 1.6; }
     .pill-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
     .pill {
       border: 1px solid var(--line);
       border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 0.9rem;
-      background: rgba(255,255,255,0.85);
+      padding: 9px 14px;
+      font-size: 0.83rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.05);
+      color: var(--ink);
+    }
+    .hero-split {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 22px;
+      align-items: start;
+    }
+    .hero-aside {
+      min-width: 220px;
+      border-radius: 24px;
+      padding: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .hero-aside strong {
+      display: block;
+      font-size: 2.6rem;
+      line-height: 1;
+      margin-bottom: 6px;
+      color: var(--accent-3);
+      font-family: "Iowan Old Style", Georgia, serif;
+    }
+    .hero-aside span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+    .top-band {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr 0.8fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .band-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      padding: 18px 20px;
+      box-shadow: var(--glow);
+    }
+    .band-card .muted {
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .band-value {
+      display: block;
+      font-size: 1.7rem;
+      margin-top: 10px;
+      font-weight: 700;
     }
     .grid {
       display: grid;
@@ -62,33 +166,58 @@
     .controls { grid-column: span 4; }
     .map-panel { grid-column: span 8; }
     .results { grid-column: span 12; }
-    label { display: block; font-size: 0.9rem; color: var(--muted); margin-bottom: 6px; }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.12em; }
     select, input, button {
       width: 100%;
-      padding: 12px 14px;
+      padding: 13px 14px;
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 16px;
       font: inherit;
-      background: #fff;
+      background: rgba(255,255,255,0.06);
       color: var(--ink);
+      transition: border-color 180ms ease, transform 180ms ease, background 180ms ease;
+    }
+    select:focus, input:focus {
+      outline: none;
+      border-color: rgba(99, 199, 255, 0.55);
+      background: rgba(255,255,255,0.1);
     }
     button {
       cursor: pointer;
       font-weight: 700;
-      background: linear-gradient(135deg, var(--accent), #e87d58);
+      background: linear-gradient(135deg, var(--accent), #ff9970);
       color: white;
       border: none;
       margin-top: 8px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      box-shadow: 0 18px 30px rgba(255, 107, 87, 0.22);
+    }
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.02);
     }
     .field { margin-bottom: 14px; }
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .controls-copy {
+      color: var(--muted);
+      line-height: 1.55;
+      margin-bottom: 18px;
+      max-width: 36ch;
+    }
     .map-shell {
       min-height: 420px;
       background:
-        linear-gradient(180deg, rgba(47,102,144,0.08), rgba(255,255,255,0.04)),
-        repeating-linear-gradient(45deg, rgba(24,33,38,0.03), rgba(24,33,38,0.03) 8px, transparent 8px, transparent 16px);
-      border-radius: 20px;
+        linear-gradient(180deg, rgba(99,199,255,0.08), rgba(255,255,255,0.02)),
+        radial-gradient(circle at 20% 20%, rgba(255,224,130,0.08), transparent 30%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03) 8px, transparent 8px, transparent 16px);
+      border-radius: 24px;
       border: 1px solid var(--line);
-      padding: 12px;
+      padding: 14px;
     }
     svg { width: 100%; height: 100%; min-height: 390px; }
     .cards {
@@ -97,12 +226,22 @@
       gap: 16px;
     }
     .metric {
-      background: rgba(47, 102, 144, 0.05);
-      border-radius: 18px;
-      padding: 16px;
-      border: 1px solid rgba(47, 102, 144, 0.14);
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+      border-radius: 22px;
+      padding: 18px;
+      border: 1px solid rgba(99, 199, 255, 0.16);
+      min-height: 152px;
     }
-    .metric strong { display: block; font-size: 1.6rem; margin-top: 8px; }
+    .metric strong {
+      display: block;
+      font-size: 2rem;
+      margin-top: 12px;
+      font-family: "Iowan Old Style", Georgia, serif;
+      color: var(--accent-3);
+    }
+    .metric .muted {
+      line-height: 1.55;
+    }
     .cols {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -117,9 +256,9 @@
     }
     .compare-box {
       border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 14px;
-      background: rgba(255,255,255,0.72);
+      border-radius: 20px;
+      padding: 16px;
+      background: rgba(255,255,255,0.04);
     }
     .table {
       width: 100%;
@@ -129,14 +268,65 @@
     .table th, .table td {
       text-align: left;
       padding: 10px 8px;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
       vertical-align: top;
+    }
+    .table th {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .table tr:last-child td {
+      border-bottom: none;
     }
     .muted { color: var(--muted); }
     .model-status { margin-top: 14px; color: var(--muted); font-size: 0.92rem; }
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .section-copy {
+      color: var(--muted);
+      max-width: 46ch;
+      line-height: 1.55;
+      margin-bottom: 0;
+    }
+    .panel-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .footer-note {
+      margin-top: 24px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.88rem;
+      letter-spacing: 0.06em;
+    }
+    .pulse {
+      animation: riseIn 640ms ease both;
+    }
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     @media (max-width: 980px) {
-      .hero, .cards, .cols, .grid { grid-template-columns: 1fr; }
+      .hero, .cards, .cols, .grid, .top-band, .hero-split, .field-grid { grid-template-columns: 1fr; }
       .controls, .map-panel, .results { grid-column: span 1; }
+      .hero-aside { min-width: 0; }
     }
   </style>
 </head>
@@ -144,23 +334,54 @@
   <div class="wrap">
     <section class="hero">
       <div class="hero-card">
-        <h1>F1 2026<br/>Strategy Lab</h1>
-        <p class="lede">Inspect track geometry, compare team pace, and blend a trained historical lap regressor with the rule-based 2026 strategy simulator.</p>
-        <div class="pill-row">
-          <div class="pill">24-track map layer</div>
-          <div class="pill">Historical lap regressor</div>
-          <div class="pill">ERS and tyre strategy</div>
+        <div class="hero-split">
+          <div>
+            <div class="eyebrow">Formula One Strategy Desk</div>
+            <h1>F1 2026<br/>Strategy Lab</h1>
+            <p class="lede">Inspect circuit geometry, compare drivers across teams, and blend dedicated qualifying and race models with the 2026 strategy simulator.</p>
+            <div class="pill-row">
+              <div class="pill">24-track map layer</div>
+              <div class="pill">Driver-aware predictions</div>
+              <div class="pill">Qualifying and race ML</div>
+            </div>
+          </div>
+          <div class="hero-aside">
+            <strong id="heroTrack">Japan</strong>
+            <span id="heroMeta">Live strategy desk with pace, ERS, tyre windows, and classification projections.</span>
+          </div>
         </div>
       </div>
       <div class="hero-card">
-        <h3>Model Snapshot</h3>
+        <div class="eyebrow">Model Snapshot</div>
+        <h2>Live Model Status</h2>
         <div id="modelStatus" class="model-status">Loading model metadata...</div>
+      </div>
+    </section>
+
+    <section class="top-band pulse">
+      <div class="band-card">
+        <div class="muted">Current Team / Driver</div>
+        <span id="scenarioDriver" class="band-value">Mercedes / Kimi Antonelli</span>
+      </div>
+      <div class="band-card">
+        <div class="muted">Current Track</div>
+        <span id="scenarioTrack" class="band-value">Japan</span>
+      </div>
+      <div class="band-card">
+        <div class="muted">Session Weather</div>
+        <span id="scenarioWeather" class="band-value">25C / 8 kph</span>
       </div>
     </section>
 
     <section class="grid">
       <div class="panel controls">
-        <h2>Scenario</h2>
+        <div class="section-head">
+          <div>
+            <div class="panel-tag">Scenario Builder</div>
+            <h2>Set The Weekend</h2>
+          </div>
+        </div>
+        <p class="controls-copy">Pick a team-driver package, shape the weather, and run a full 2026 strategy pass with qualifying pace, race plan, and energy behavior.</p>
         <div class="field">
           <label for="team">Team</label>
           <select id="team"></select>
@@ -173,13 +394,15 @@
           <label for="track">Track</label>
           <select id="track"></select>
         </div>
-        <div class="field">
-          <label for="temp">Ambient temperature (C)</label>
-          <input id="temp" type="number" value="25" />
-        </div>
-        <div class="field">
-          <label for="wind">Wind speed (kph)</label>
-          <input id="wind" type="number" value="8" />
+        <div class="field-grid">
+          <div class="field">
+            <label for="temp">Ambient temperature (C)</label>
+            <input id="temp" type="number" value="25" />
+          </div>
+          <div class="field">
+            <label for="wind">Wind speed (kph)</label>
+            <input id="wind" type="number" value="8" />
+          </div>
         </div>
         <div class="field">
           <label for="position">Starting position</label>
@@ -214,7 +437,13 @@
       </div>
 
       <div class="panel map-panel">
-        <h2>Track Map</h2>
+        <div class="section-head">
+          <div>
+            <div class="panel-tag">Track Intelligence</div>
+            <h2>Track Map</h2>
+          </div>
+          <p class="section-copy">Use the map view to anchor braking zones, traction exits, and energy-release sections.</p>
+        </div>
         <div class="map-shell">
           <svg id="trackSvg" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet"></svg>
         </div>
@@ -222,7 +451,13 @@
       </div>
 
       <div class="panel results">
-        <h2>Outputs</h2>
+        <div class="section-head">
+          <div>
+            <div class="panel-tag">Weekend Outputs</div>
+            <h2>Strategy Outputs</h2>
+          </div>
+          <p class="section-copy">The cards below combine engineering heuristics with dedicated qualifying and race regressors.</p>
+        </div>
         <div class="cards">
           <div class="metric">
             <span class="muted">Qualifying</span>
@@ -266,6 +501,8 @@
         </div>
       </div>
     </section>
+
+    <div class="footer-note">Built as an explainable 2026 F1 strategy lab: pace, energy, tyres, and scenario comparison in one cockpit.</div>
   </div>
 
   <script>
@@ -300,6 +537,14 @@
 
     function fillDriverSelect(teamKey) {
       fillDriverSelectFor('driver', teamKey);
+    }
+
+    function getDriverLabel(teamKey, driverNumber) {
+      if (!driverNumber) {
+        return `${titleize(teamKey)} baseline`;
+      }
+      const driver = metaCache.drivers.find(item => String(item.number) === String(driverNumber));
+      return driver ? `${driver.name} / ${titleize(teamKey)}` : `${titleize(teamKey)} baseline`;
     }
 
     function drawTrackMap(mapData) {
@@ -376,6 +621,11 @@
       lastScenario = {track, ambient_temp_c, wind_kph};
       document.getElementById('classificationStatus').textContent = 'Classification is ready to load for this scenario.';
       document.getElementById('classificationTable').innerHTML = '';
+      document.getElementById('scenarioDriver').textContent = getDriverLabel(team, driver_number);
+      document.getElementById('scenarioTrack').textContent = titleize(track);
+      document.getElementById('scenarioWeather').textContent = `${ambient_temp_c}C / ${wind_kph} kph`;
+      document.getElementById('heroTrack').textContent = titleize(track);
+      document.getElementById('heroMeta').textContent = `Evaluating ${getDriverLabel(team, driver_number)} with ${ambient_temp_c}C ambient, ${wind_kph} kph wind, and a P${starting_position} launch window.`;
 
       const [qual, race, board, mapData] = await Promise.all([
         fetchJson('/predict/qualifying', {
@@ -455,7 +705,7 @@
 
       const modelMeta = await fetchJson('/model/status');
       document.getElementById('modelStatus').textContent = modelMeta.available
-        ? `Historical lap regressor active · ${modelMeta.rows} laps · MAE ${modelMeta.mae_sec}s · RMSE ${modelMeta.rmse_sec}s`
+        ? `Global ${modelMeta.mae_sec}s MAE across ${modelMeta.rows} laps. Qualifying model ${modelMeta.qualifying_model_available ? `${modelMeta.qualifying_model_metrics.mae_sec}s MAE` : 'offline'}. Race model ${modelMeta.race_model_available ? `${modelMeta.race_model_metrics.mae_sec}s MAE` : 'offline'}.`
         : 'No trained model artifact found yet. Run scripts/build_datasets.py and scripts/train_regressor.py to activate ML blending.';
 
       document.getElementById('track').value = 'japan';
