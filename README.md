@@ -55,16 +55,31 @@ The provided PDF focuses on rubric quality more than domain rules. This project 
     └── test_engine.py
 ```
 
-## Quick start
+## How to run the code
 
 ```bash
+git clone https://github.com/Naksh-IIITB/hacknight.git
+cd hacknight
 python3 -m pip install --user -r requirements.txt
-PYTHONPATH=. python3 scripts/build_datasets.py
-PYTHONPATH=. python3 scripts/train_regressor.py
-python3 -m uvicorn api:app --reload
+python3 -m unittest discover -s tests -v
+python3 -m uvicorn api:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Then open the dashboard at `http://127.0.0.1:8000/` or the API docs at `http://127.0.0.1:8000/docs`.
+Then open:
+
+- Dashboard: `http://127.0.0.1:8000/`
+- API docs: `http://127.0.0.1:8000/docs`
+
+### Rebuild the dataset and retrain the model
+
+You do **not** need to do this for normal use because the repo already includes the generated data files and trained model artifact.
+
+Only run these if you want to regenerate the dataset or retrain the regressor:
+
+```bash
+PYTHONPATH=. python3 scripts/build_datasets.py
+PYTHONPATH=. python3 scripts/train_regressor.py
+```
 
 ## Current trained model
 
