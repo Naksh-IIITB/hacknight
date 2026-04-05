@@ -228,7 +228,7 @@ class F1Predictor:
     def build_team_strategy_board(self, track_key: str) -> list[dict[str, Any]]:
         board = []
         for team_key in self.list_teams():
-            result = self.simulate_race(team_key, track_key)
+            result = self.simulate_race(team_key, track_key, include_expected_result=False)
             board.append(
                 {
                     "team": result["team"],
@@ -247,16 +247,18 @@ class F1Predictor:
         ambient_temp_c: float | None = None,
         wind_kph: float = 8.0,
     ) -> list[dict[str, Any]]:
+        track = self._track(track_key)
+        temp = float(ambient_temp_c if ambient_temp_c is not None else track.nominal_temp_c)
         entries = []
         seen_teams: set[str] = set()
         for driver in self.drivers:
-            race = self.simulate_race(
-                driver.team_key,
-                track_key,
-                driver_number=driver.number,
-                ambient_temp_c=ambient_temp_c,
+            team = self._team(driver.team_key)
+            total_time = self._project_race_total(
+                team=team,
+                track=track,
+                driver=driver,
+                ambient_temp_c=temp,
                 wind_kph=wind_kph,
-                include_expected_result=False,
             )
             entries.append(
                 {
@@ -264,23 +266,30 @@ class F1Predictor:
                     "driver": driver.name,
                     "number": driver.number,
                     "team": driver.team_name,
-                    "predicted_total_time": race["predicted_total_time"],
-                    "total_race_time_sec": race["total_race_time_sec"],
+                    "predicted_total_time": self._fmt(total_time),
+                    "total_race_time_sec": round(total_time, 3),
                 }
             )
             seen_teams.add(driver.team_key)
         for team_key in self.list_teams():
             if team_key in seen_teams:
                 continue
-            race = self.simulate_race(team_key, track_key, ambient_temp_c=ambient_temp_c, wind_kph=wind_kph)
+            team = self._team(team_key)
+            total_time = self._project_race_total(
+                team=team,
+                track=track,
+                driver=None,
+                ambient_temp_c=temp,
+                wind_kph=wind_kph,
+            )
             entries.append(
                 {
                     "position": 0,
                     "driver": "Team baseline",
                     "number": None,
-                    "team": race["team"],
-                    "predicted_total_time": race["predicted_total_time"],
-                    "total_race_time_sec": race["total_race_time_sec"],
+                    "team": team.name,
+                    "predicted_total_time": self._fmt(total_time),
+                    "total_race_time_sec": round(total_time, 3),
                 }
             )
         entries.sort(key=lambda item: item["total_race_time_sec"])
@@ -423,6 +432,34 @@ class F1Predictor:
         if current_compound == next_compound:
             delta += 0.4
         return delta
+
+    def _project_race_total(
+        self,
+        *,
+        team: TeamProfile,
+        track: TrackProfile,
+        driver: DriverProfile | None,
+        ambient_temp_c: float,
+        wind_kph: float,
+    ) -> float:
+        average_fuel = track.lap_count * track.fuel_burn_kg_per_lap * 0.48
+        traffic_penalty = track.dirty_air_penalty_sec * (1.08 - team.dirty_air_resilience) * 0.42
+        average_lap = self._average_race_lap(
+            team,
+            track,
+            driver,
+            "medium",
+            max(round(track.lap_count * 0.46), 1),
+            average_fuel,
+            ambient_temp_c,
+            traffic_penalty,
+            wind_kph,
+            stint_number=1,
+            average_position=10,
+            average_lap_number=0.5,
+        )
+        strategic_overhead = 18.5 + track.length_km * 0.55 + track.overtaking_risk * 2.0
+        return average_lap * track.lap_count + strategic_overhead
 
     def _split_stints(self, lap_count: int, stint_count: int, tyre_stress: float) -> list[int]:
         if stint_count == 2:
